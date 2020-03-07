@@ -8,12 +8,18 @@ import csv
 from pathlib import Path
 
 
-render = False
+render = True
 benchmark = False
+
 batch_size = 2
 learning_rate = 1e-4
 gamma = 0.99 # discount factor for reward
-decay_rate = 0.99
+
+momentum_decay = 0.90
+uncentered_var_decay = 0.999
+t_bias_correction = 1
+epsilon = 1e-5
+
 dimension = 80 * 80
 
 # resume from previous checkpoint?
@@ -25,6 +31,46 @@ if my_file.is_file():
 else:
   print('First run')
   resume = False
+
+def import_csv(csvfilename):
+  data = []
+  row_index = 0
+  with open(csvfilename, "r", encoding="utf-8", errors="ignore") as scraped:
+    reader = csv.reader(scraped, delimiter=',')
+    for row in reader:
+      data.append(row[0])
+  return data
+
+if resume:
+  data = import_csv('episode_file.csv')
+  episode_number = int(data[0])
+else:
+  episode_number = 0
+
+
+if resume:
+  model = pickle.load(open('save.p', 'rb'))
+  #takes 10-15 ms on macbook pro
+else:
+  model = {}
+  if benchmark:
+    np.random.seed(5) ; model['W1'] = np.random.randn(200,dimension)/np.sqrt(dimension)
+    np.random.seed(5) ; model['B1'] = np.random.randn(200)/np.sqrt(200)
+    np.random.seed(5) ; model['W2'] = np.random.randn(50,200)/np.sqrt(200)
+    np.random.seed(5) ; model['B2'] = np.random.randn(50)/np.sqrt(50)
+    np.random.seed(5) ; model['W3'] = np.random.randn(50)/np.sqrt(50)
+  else:
+    model['W1'] = np.random.randn(200,dimension)/np.sqrt(dimension)
+    model['B1'] = np.random.randn(200)/np.sqrt(200)
+    model['W2'] = np.random.randn(50,200)/np.sqrt(200)
+    model['B2'] = np.random.randn(50)/np.sqrt(50)
+    model['W3'] = np.random.randn(50)/np.sqrt(50)
+
+grad_buffer = { k : np.zeros_like(v) for k,v in model.items() } # update buffers that add up gradients over a batch
+#updated .iteritems to .items
+adam_cache = { k : np.zeros_like(v) for k,v in model.items() } 
+momentum_moment = { k : np.zeros_like(v) for k,v in model.items() }
+uncentered_var_moment = { k : np.zeros_like(v) for k,v in model.items() }
 
 # below function used for balck and white game
 def pre_process_image(frame): # function for when we use the main pong on server
@@ -131,45 +177,6 @@ def discount_rewards(r):
   discounted_r /= np.std(discounted_r)
   return discounted_r
 
-def import_csv(csvfilename):
-  data = []
-  row_index = 0
-  with open(csvfilename, "r", encoding="utf-8", errors="ignore") as scraped:
-    reader = csv.reader(scraped, delimiter=',')
-    for row in reader:
-      data.append(row[0])
-  return data
-
-if resume:
-  data = import_csv('episode_file.csv')
-  episode_number = int(data[0])
-else:
-  episode_number = 0
-
-
-if resume:
-  model = pickle.load(open('save.p', 'rb'))
-  #takes 10-15 ms on macbook pro
-else:
-  model = {}
-  if benchmark:
-    np.random.seed(5) ; model['W1'] = np.random.randn(200,dimension)/np.sqrt(dimension)
-    np.random.seed(5) ; model['B1'] = np.random.randn(200)/np.sqrt(200)
-    np.random.seed(5) ; model['W2'] = np.random.randn(50,200)/np.sqrt(200)
-    np.random.seed(5) ; model['B2'] = np.random.randn(50)/np.sqrt(50)
-    np.random.seed(5) ; model['W3'] = np.random.randn(50)/np.sqrt(50)
-  else:
-    model['W1'] = np.random.randn(200,dimension)/np.sqrt(dimension)
-    model['B1'] = np.random.randn(200)/np.sqrt(200)
-    model['W2'] = np.random.randn(50,200)/np.sqrt(200)
-    model['B2'] = np.random.randn(50)/np.sqrt(50)
-    model['W3'] = np.random.randn(50)/np.sqrt(50)
-
-grad_buffer = { k : np.zeros_like(v) for k,v in model.items() } # update buffers that add up gradients over a batch
-#updated .iteritems to .items
-rmsprop_cache = { k : np.zeros_like(v) for k,v in model.items() } 
-
-
 env = gym.make("Pong-v0")
 observation = env.reset()
 prev_frame = None
@@ -213,7 +220,6 @@ while True:
     episode_z2 = np.vstack(z2)
  
 
-
     episode_loss_grad = np.vstack(loss_grad)
     episode_reward = np.vstack(r)
 
@@ -222,16 +228,26 @@ while True:
     discounted_ep_rewards = discount_rewards(episode_reward)
 
     episode_loss_grad *= discounted_ep_rewards
+
     grad = back_prop(episode_input, episode_z1 ,episode_h1, episode_z2, episode_h2, episode_loss_grad)
     
     for k in model: grad_buffer[k] += grad[k] # accumulate grad over the batch
+
     if episode_number % batch_size == 0:
       for k,v in model.items():
         #updated .iteritems to .items to work with python3
         g = grad_buffer[k] # gradient
-        rmsprop_cache[k] = decay_rate * rmsprop_cache[k] + (1 - decay_rate) * g**2
-        model[k] += learning_rate * g / (np.sqrt(rmsprop_cache[k]) + 1e-5)
+        momentum = momentum_decay * momentum_moment[k] + (1 - momentum_decay) * g
+        uncentered_var = uncentered_var_decay * uncentered_var_moment[k] + (1 - uncentered_var_decay) * g**2 
+        
+        momentum_moment[k] = momentum / (1 - momentum_decay ** t_bias_correction )
+        uncentered_var_moment[k] = uncentered_var / ( 1 - uncentered_var_decay ** t_bias_correction)
+
+        
+        # rmsprop_cache[k] = decay_rate * rmsprop_cache[k] + (1 - decay_rate) * g**2
+        model[k] += learning_rate * momentum_moment[k] / (np.sqrt(uncentered_var_moment[k]) + epsilon)
         grad_buffer[k] = np.zeros_like(v)
+      t_bias_correction += 1 
 
     # === Documenting Performance and resetting below
     if episode_number % batch_size == 1:
