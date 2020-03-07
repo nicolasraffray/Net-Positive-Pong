@@ -67,8 +67,6 @@ else:
     model['W3'] = np.random.randn(50)/np.sqrt(50)
 
 grad_buffer = { k : np.zeros_like(v) for k,v in model.items() } # update buffers that add up gradients over a batch
-#updated .iteritems to .items
-adam_cache = { k : np.zeros_like(v) for k,v in model.items() } 
 momentum_moment = { k : np.zeros_like(v) for k,v in model.items() }
 uncentered_var_moment = { k : np.zeros_like(v) for k,v in model.items() }
 
