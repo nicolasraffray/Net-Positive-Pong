@@ -10,7 +10,10 @@ class Vector
   }
   get length()
   {
-    return Math.sqrt(this.x * this.x + this.y * this.y)
+    console.log("this is x", this.x * this.x)
+    console.log("this is y", this.y * this.y)
+
+    return 80000
   }
 
   set length(value)
@@ -170,6 +173,7 @@ class Pong
       const length = ball.velocity.length
       ball.velocity.x = -ball.velocity.x;
       ball.velocity.y += 300 * (Math.random() - .5);
+      console.log(Math.random())
       ball.velocity.length = length * 1.05; 
     }
   }

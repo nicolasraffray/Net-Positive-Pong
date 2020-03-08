@@ -177,11 +177,15 @@ state, z1, h1, z2, h2, h3, loss_grad, r = [], [], [], [], [], [], [], []
 running_reward = None
 reward_sum = 0 
 cumulative_batch_rewards = 0
-
+i = 0
 while True:
   if render: env.render()
   observation1 = pre_process_image(observation)
+  print(i)
+  i += 1
   cv2.imwrite('color_img.jpg', observation1)
+  if i == 30:
+    break
   frame = prepro(observation)
   d_frame = frame - prev_frame if prev_frame is not None else np.zeros(dimension)
   prev_frame = frame
