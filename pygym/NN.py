@@ -241,8 +241,6 @@ while True:
         momentum_moment[k] = momentum / (1 - momentum_decay ** t_bias_correction )
         uncentered_var_moment[k] = uncentered_var / ( 1 - uncentered_var_decay ** t_bias_correction)
 
-        
-        # rmsprop_cache[k] = decay_rate * rmsprop_cache[k] + (1 - decay_rate) * g**2
         model[k] += learning_rate * momentum_moment[k] / (np.sqrt(uncentered_var_moment[k]) + epsilon)
         grad_buffer[k] = np.zeros_like(v)
       t_bias_correction += 1 
