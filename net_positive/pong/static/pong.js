@@ -50,7 +50,7 @@ class Ball extends Rectangle
 {
   constructor()
   {
-    super(10, 10);
+    super(16, 16);
     this.velocity = new Vector;
   }
 }
@@ -59,7 +59,7 @@ class Player extends Rectangle
 {
   constructor()
   {
-    super(20 , 100);
+    super(28 , 48);
     this.score = 0;
     this.game = 0;
     this.velocity = new Vector;
@@ -97,8 +97,8 @@ class Pong
       new Player,
     ];
 
-    this.players[0].position.x = 20;
-    this.players[1].position.x = this._canvas.width - 20;
+    this.players[0].position.x = 84;
+    this.players[1].position.x = this._canvas.width - 84;
     this.players.forEach( player => { player.position.y = this._canvas.height / 2 });
 
 
@@ -147,8 +147,8 @@ class Pong
     // console.log(d.getSeconds())
     // console.log(d.getMilliseconds())
     var image = 'placeholder'
-    // let url = `http://localhost:8000/pong/bot?&bally=${Math.round(this.ball.position.y)}&paddley=${this.players[1].position.y}&reward=${this.aggregateReward}&img=${image}`
-    let url = `http://net-positive.herokuapp.com/pong/bot?bally=${Math.round(this.ball.position.y)}&paddley=${this.players[1].position.y}&reward=${this.aggregateReward}&img=${image}`
+    let url = `http://localhost:8000/pong/bot?&bally=${Math.round(this.ball.position.y)}&paddley=${this.players[1].position.y}&reward=${this.aggregateReward}&img=${image}`
+    // let url = `http://net-positive.herokuapp.com/pong/bot?bally=${Math.round(this.ball.position.y)}&paddley=${this.players[1].position.y}&reward=${this.aggregateReward}&img=${image}`
     var that = this
     var xmlhttp = new XMLHttpRequest()
     xmlhttp.onreadystatechange = function() {

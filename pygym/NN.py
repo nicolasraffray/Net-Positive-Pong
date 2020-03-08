@@ -8,7 +8,7 @@ import csv
 from pathlib import Path
 
 
-render = False
+render = True
 benchmark = False
 batch_size = 2
 learning_rate = 1e-4
@@ -29,11 +29,11 @@ else:
 # below function used for balck and white game
 def pre_process_image(frame): # function for when we use the main pong on server
   """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector """
-  frame = cv2.cvtColor(cv2.resize(frame,(80,80)), cv2.COLOR_BGR2GRAY)
+  frame = cv2.cvtColor(cv2.resize(frame,(210,160)), cv2.COLOR_BGR2GRAY)
 
-  ret, frame = cv2.threshold(frame, 127, 255, cv2.THRESH_BINARY) # et is useless
-  frame[frame == 255] = 1
-  frame = frame.ravel()
+  # ret, frame = cv2.threshold(frame, 127, 255, cv2.THRESH_BINARY) # et is useless
+  # frame[frame == 255] = 1
+  # frame = frame.ravel()
   return frame
 
 def prepro(I): # function for openai gym image conversion taken from a Deeplearning site
@@ -180,8 +180,8 @@ cumulative_batch_rewards = 0
 
 while True:
   if render: env.render()
-
-  # cv2.imwrite('color_img.jpg', observation1)
+  observation1 = pre_process_image(observation)
+  cv2.imwrite('color_img.jpg', observation1)
   frame = prepro(observation)
   d_frame = frame - prev_frame if prev_frame is not None else np.zeros(dimension)
   prev_frame = frame
