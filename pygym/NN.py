@@ -104,9 +104,9 @@ def forward_prop(input_array, weights_dict):
   return forward_output
 
 def make_move(A3):
-  if A3 > 0.8:
+  if A3 > 0.95:
     action = 2 
-  elif A3 < 0.2:
+  elif A3 < 0.05:
     action = 3
   elif A3 > np.random.uniform():
     action = 2
