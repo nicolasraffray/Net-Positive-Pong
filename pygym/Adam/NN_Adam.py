@@ -194,6 +194,12 @@ cumulative_batch_rewards = 0
 while True:
   if render: env.render()
 
+  i = 0 
+  if i % 25 == 0:
+    print(observation.size)
+    break
+
+  
   # cv2.imwrite('color_img.jpg', observation1)
   frame = prepro(observation)
   d_frame = frame - prev_frame if prev_frame is not None else np.zeros(dimension)
