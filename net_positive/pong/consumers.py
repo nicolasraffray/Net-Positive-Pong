@@ -1,5 +1,6 @@
 from channels.generic.websocket import WebsocketConsumer
 import json
+import numpy as np
 from pong.models import SimpleBot
 from pong.models import AndrejBot
 
@@ -18,11 +19,12 @@ class PongConsumer(WebsocketConsumer):
         image = json.loads(text_data)["image"]
         
         image_array = [int(i) for i in image]
-        print(image_array)
+        image_array = np.asarray(image_array)
+        a = image_array.reshape(320, 320, 3).astype('float32')
         # print(type(image_array))
-        # print(image_array)
+        # print(a)
         # move = SimpleBot.simple_bot_ws(bally, paddley, reward)
-        move = AndrejBot.andrej_bot(image_array)
+        move = AndrejBot.andrej_bot(a)
         
         self.send(text_data=json.dumps({
             'move': move,

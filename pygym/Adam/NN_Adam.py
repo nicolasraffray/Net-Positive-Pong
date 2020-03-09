@@ -8,7 +8,7 @@ import csv
 from pathlib import Path
 
 
-render = False
+render = True
 benchmark = False
 in_match = False
 
@@ -194,13 +194,20 @@ cumulative_batch_rewards = 0
 while True:
   if render: env.render()
 
-  i = 0 
+  # i = 0 
+  # if i % 25 == 0:
+  #   print(observation.size)
+  #   break
+
+  i = 0
   if i % 25 == 0:
-    print(observation.size)
+    frame = pre_process_image(observation)
+    cv2.imwrite('color_img.jpg', frame)
     break
 
-  
-  # cv2.imwrite('color_img.jpg', observation1)
+
+    # cv2.imwrite('color_img.jpg', observation1)
+
   frame = prepro(observation)
   d_frame = frame - prev_frame if prev_frame is not None else np.zeros(dimension)
   prev_frame = frame
