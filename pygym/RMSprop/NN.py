@@ -11,7 +11,7 @@ from pathlib import Path
 render = False
 benchmark = False
 
-batch_size = 3
+batch_size = 10
 learning_rate = 1e-4
 gamma = 0.99 # discount factor for reward
 decay_rate = 0.99
@@ -251,6 +251,47 @@ while True:
     if episode_number % 100 == 0: 
       pickle.dump(model, open('save.p', 'wb'))
       #takes 15-20ms on macbook pro
+    if episode_number == 5000:
+        pickle.dump(model, open('episode_5000.p', 'wb'))
+    if episode_number == 10000:
+      pickle.dump(model, open('episode_10000.p', 'wb'))
+    if episode_number == 15000:
+      pickle.dump(model, open('episode_15000.p', 'wb'))
+    if episode_number == 20000:
+      pickle.dump(model, open('episode_20000.p', 'wb'))
+    if episode_number == 25000:
+      pickle.dump(model, open('episode_25000.p', 'wb'))
+    if episode_number == 30000:
+      pickle.dump(model, open('episode_30000.p', 'wb'))
+    if episode_number == 35000:
+      pickle.dump(model, open('episode_35000.p', 'wb'))
+    if episode_number == 40000:
+      pickle.dump(model, open('episode_40000.p', 'wb'))
+    if episode_number == 45000:
+      pickle.dump(model, open('episode_45000.p', 'wb'))
+    if episode_number == 50000:
+      pickle.dump(model, open('episode_50000.p', 'wb'))
+    if episode_number == 55000:
+      pickle.dump(model, open('episode_55000.p', 'wb'))
+    if episode_number == 60000:
+      pickle.dump(model, open('episode_60000.p', 'wb'))
+    if episode_number == 65000:
+      pickle.dump(model, open('episode_65000.p', 'wb'))
+    if episode_number == 70000:
+      pickle.dump(model, open('episode_70000.p', 'wb'))
+    if episode_number == 75000:
+      pickle.dump(model, open('episode_75000.p', 'wb'))
+    if episode_number == 80000:
+      pickle.dump(model, open('episode_80000.p', 'wb'))
+    if episode_number == 85000:
+      pickle.dump(model, open('episode_85000.p', 'wb'))
+    if episode_number == 90000:
+      pickle.dump(model, open('episode_90000.p', 'wb'))
+    if episode_number == 95000:
+      pickle.dump(model, open('episode_95000.p', 'wb'))
+    if episode_number == 100000:
+      pickle.dump(model, open('episode_100000.p', 'wb'))
+
     if episode_number % batch_size == 0: 
       with open('episode_file.csv', mode='w') as episode_file: #store the last episode
         episode_writer = csv.writer(episode_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
