@@ -235,6 +235,7 @@ while True:
         grad_buffer[k] = np.zeros_like(v)
 
     # === Documenting Performance and resetting below
+    running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
     if episode_number % batch_size == 1:
       cumulative_batch_rewards = reward_sum
       batch_average = reward_sum
