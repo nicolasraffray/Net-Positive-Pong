@@ -1,6 +1,7 @@
 # Data visualization 
 
-data <- read.csv("performance_file.csv")
+setwd("/Users/nicolasraffray/Desktop/Makers_Course/Final_Project/Net-Positive-Makers/pygym/Performance")
+data <- read.csv("RMSperformance_file.csv")
 
 # If do not have below library run uncomment below line and run
 # install.packages("pracma")
