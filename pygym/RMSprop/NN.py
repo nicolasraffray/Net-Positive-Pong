@@ -11,11 +11,11 @@ from pathlib import Path
 render = False
 benchmark = False
 
-batch_size = 10
+batch_size = 5
 learning_rate = 1e-4
 gamma = 0.99 # discount factor for reward
 decay_rate = 0.99
-dimension = 80 * 80
+dimension = 80 * 70
 
 # resume from previous checkpoint?
 
@@ -39,12 +39,15 @@ def pre_process_image(frame): # function for when we use the main pong on server
 
 def prepro(I): # function for openai gym image conversion taken from a Deeplearning site
   """ prepro 210x160x3 uint8 frame into 6000 (80x80) 1D float vector """
-  I = I[35:195] # crop - remove 35px from start & 25px from end of image in x, to reduce redundant parts of image (i.e. after ball passes paddle)
-  I = I[::2,::2,0] # downsample by factor of 2.
-  I[I == 144] = 0 # erase background (background type 1)
-  I[I == 109] = 0 # erase background (background type 2)
-  I[I != 0] = 1 # everything else (paddles, ball) just set to 1. this makes the image grayscale effectively
-  return I.astype(np.float).ravel()
+  obs = I[34:194] # crop - remove 35px from start & 25px from end of image in x, to reduce redundant parts of image (i.e. after ball passes paddle)
+  obs1 = obs[:,20:]
+  cv2.imwrite('net_view.png', obs1)
+  obs1 = obs1[::2,::2,0]
+  obs1[obs1 == 144] = 0 # erase background (background type 1)
+  obs1[obs1 == 109] = 0 # erase background (background type 2)
+  obs1[obs1 != 0] = 1
+  obs1 = obs1.astype(np.float).ravel()
+  return obs1 
 
 def relu(Z): 
   return np.maximum(0.0,Z)
@@ -182,8 +185,8 @@ cumulative_batch_rewards = 0
 while True:
   if render: env.render()
 
-  # cv2.imwrite('color_img.jpg', observation1)
   frame = prepro(observation)
+
   d_frame = frame - prev_frame if prev_frame is not None else np.zeros(dimension)
   prev_frame = frame
 
@@ -212,9 +215,6 @@ while True:
     episode_z1 = np.vstack(z1)
     episode_h2 = np.vstack(h2)
     episode_z2 = np.vstack(z2)
- 
-
-
     episode_loss_grad = np.vstack(loss_grad)
     episode_reward = np.vstack(r)
 
