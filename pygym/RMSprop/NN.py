@@ -8,10 +8,10 @@ import cv2
 import gym
 import numpy as np
 
-render = True
+render = False
 benchmark = False
 
-batch_size = 3
+batch_size = 5
 learning_rate = 1e-4
 gamma = 0.99 # discount factor for reward
 decay_rate = 0.99
@@ -153,7 +153,6 @@ def back_prop(ep_input, ep_Z1, ep_A1, ep_Z2, ep_A2, ep_Z3, ep_A3,ep_end_grad):
   dC_dZ1 = dC_dA1 * dA1_dZ1
 
   dW1 = np.dot(dC_dZ1.T, ep_input)
-
 
   derivatives = {}
   derivatives['W1'] = dW1
