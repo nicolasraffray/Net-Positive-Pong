@@ -32,15 +32,16 @@ class PongConsumer(WebsocketConsumer):
         image = image.decode('ascii')
         print('split')
         print(datetime.now())
-        image = image.split(',')
+        image = list(image)
+      
         # print(image)
         print(type(image))
         print('send to model')
         print(datetime.now())
         # move = SimpleBot.simple_bot_ws(bally, paddley, reward)
-        # move = AndrejBot.andrej_bot(image)
+        move = AndrejBot.andrej_bot(image)
         
-        move = AndrejBotTraining.andrej_training(image, reward, done)
+        # move = AndrejBotTraining.andrej_training(image, reward, done)
 
         self.send(text_data=json.dumps({
             'move': move,

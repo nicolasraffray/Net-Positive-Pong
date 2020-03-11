@@ -59,14 +59,14 @@ class AndrejBot(models.Model):
     def prepro(self, I):
       """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector """
       image_array = np.asarray(I)
-      a = image_array.reshape(320, 320, 3).astype('float32')
-      a = cv2.cvtColor(cv2.resize(a,(80,80)), cv2.COLOR_BGR2GRAY)
-     
-      cv2.imwrite('color_img.jpg', a)
+      a = image_array.reshape(320, 320).astype('float32')
+      a = cv2.resize(a,(80,80))
+      # a = cv2.cvtColor(cv2.resize(a,(80,80)), cv2.COLOR_BGR2GRAY)
+      # cv2.imwrite('color_img.jpg', a)
       # print(frame[0][frame != 0])
       print("this is the frame size", a.size)
-      ret, a = cv2.threshold(a, 127, 255, cv2.THRESH_BINARY) # et is useless
-      a[a == 255] = 1
+      # ret, a = cv2.threshold(a, 127, 255, cv2.THRESH_BINARY) # et is useless
+      # a[a == 255] = 1
       I = a.ravel()
       print(len(I))
 
@@ -271,8 +271,8 @@ class AndrejBotTraining(models.Model):
       # cv2.imwrite('color_img.jpg', a)
       # print(frame[0][frame != 0])
       print("this is the frame size", a.size)
-      ret, a = cv2.threshold(a, 127, 255, cv2.THRESH_BINARY) # et is useless
-      a[a == 255] = 1
+      # ret, a = cv2.threshold(a, 127, 255, cv2.THRESH_BINARY) # et is useless
+      # a[a == 255] = 1
       I = a.ravel()
       print(len(I))
 

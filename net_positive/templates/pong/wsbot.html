@@ -186,7 +186,19 @@
       })
       imageArray = imageArray.filter(function(_, i) {
         return (i + 1) % 2;
+      
       })
+      
+      console.log(imageArray);
+
+      for (var i = 0, len = imageArray.length; i < len; i++) {
+        if (imageArray[i] > 0) {
+          imageArray[i] = 1;
+        }
+      }
+
+      imageArray = imageArray.join('')
+  
       var d2 = new Date
           console.log('btoa')
           console.log(d2.getSeconds())
@@ -332,9 +344,9 @@
 
     botUpdate(moveUp) {
       if(moveUp === true) {
-          this.players[1].position.y -= 25
+          this.players[1].position.y -= 10
       } else {
-          this.players[1].position.y += 25
+          this.players[1].position.y += 10
       }
     }
   }
