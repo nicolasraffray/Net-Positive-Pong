@@ -1,25 +1,27 @@
-from datetime import datetime 
-import pickle
-import gym
-import random 
-import numpy as np
-import cv2
 import csv
+import pickle
+import random
+from datetime import datetime
 from pathlib import Path
 
+import cv2
+import gym
+import numpy as np
 
-render = False
+render = True
 benchmark = False
 
 batch_size = 3
 learning_rate = 1e-4
 gamma = 0.99 # discount factor for reward
 decay_rate = 0.99
-dimension = 80 * 80
+dimension = 80 * 70
 
 # resume from previous checkpoint?
 
 my_file = Path("./episode_file.csv")
+""" for the first game played there is no history 
+Can we rename resume, isnt clear to what it is doing - seperation of concerns"""
 if my_file.is_file():
   print('Resuming run')
   resume = True
@@ -76,7 +78,9 @@ def pre_process_image(frame): # function for when we use the main pong on server
 
 def prepro(I): # function for openai gym image conversion taken from a Deeplearning site
   """ prepro 210x160x3 uint8 frame into 6000 (80x80) 1D float vector """
-  I = I[35:195] # crop - remove 35px from start & 25px from end of image in x, to reduce redundant parts of image (i.e. after ball passes paddle)
+  I = I[34:194] # crop - remove 35px from start & 25px from end of image in x, to reduce redundant parts of image (i.e. after ball passes paddle)
+  I = I[:,20:]
+  cv2.imwrite("image.png", I)
   I = I[::2,::2,0] # downsample by factor of 2.
   I[I == 144] = 0 # erase background (background type 1)
   I[I == 109] = 0 # erase background (background type 2)
@@ -87,14 +91,16 @@ def relu(Z):
   return np.maximum(0.0,Z)
 
 def forward_prop(input_array, weights_dict): 
-  Z1 = np.dot(weights_dict['W1'], input_array) + weights_dict["B1"]
+  Z1 = np.dot(weights_dict['W1'], input_array)
   A1 = relu(Z1)
-  Z2 = np.dot(weights_dict['W2'], A1) + weights_dict["B2"]
+  Z2 = np.dot(weights_dict['W2'], A1) 
   A2 = relu(Z2)
   Z3 = np.dot(weights_dict['W3'], A2)
-  A3 = 1.0 / (1.0 + np.exp(-Z3))
+  A3 = relu(Z3)
+  Z4 = np.dot(weights_dict['W4'], A3)
+  A4 = 1.0 / (1.0 + np.exp(-Z4))
   forward_output = {"X": input_array, "Z1": Z1, "A1": A1,
-   "Z2": Z2, "A2": A2, "A3": A3}
+   "Z2": Z2, "A2": A2,"Z3":Z3,"A3": A3, "Z4": Z4, "A4": A4}
   return forward_output
 
 def make_move(A3):
@@ -125,16 +131,21 @@ def Relu_derivative(Z):
     Z[Z <= 0] = 0 
     return Z
 
-def back_prop(ep_input, ep_Z1, ep_A1, ep_Z2, ep_A2, ep_end_grad):
-  dW3 = np.dot(ep_A2.T, ep_end_grad).ravel()
+def back_prop(ep_input, ep_Z1, ep_A1, ep_Z2, ep_A2, ep_Z3, ep_A3,ep_end_grad):
+  dW4 = np.dot(ep_A3.T, ep_end_grad).ravel()
 
-  dC_dA2 = np.outer(ep_end_grad, model['W3'])
+  dC_dA3 = np.outer(ep_end_grad, model['W4'])
+  dA3_dZ3 = Relu_derivative(ep_Z3)
+  dC_dZ3 = dC_dA3 * dA3_dZ3
+
+  dW3 =  np.dot(dC_dZ3.T, ep_A2)
+ 
+  dC_dZ3 = np.sum(dC_dZ3, axis = 0, keepdims = True)
+  dC_dA2 = np.dot(dC_dZ3, model['W3'])
   dA2_dZ2 = Relu_derivative(ep_Z2)
   dC_dZ2 = dC_dA2 * dA2_dZ2
 
-  dW2 =  np.dot(dC_dZ2.T, ep_A1)
-  dB2 = np.sum(dC_dZ2, axis = 0, keepdims = True)
-  dB2 = dB2[0]
+  dW2 = np.dot(dC_dZ2.T, ep_A1)
 
   dC_dZ2 = np.sum(dC_dZ2, axis = 0, keepdims = True)
   dC_dA1 = np.dot(dC_dZ2, model['W2'])
@@ -142,15 +153,13 @@ def back_prop(ep_input, ep_Z1, ep_A1, ep_Z2, ep_A2, ep_end_grad):
   dC_dZ1 = dC_dA1 * dA1_dZ1
 
   dW1 = np.dot(dC_dZ1.T, ep_input)
-  dB1 = np.sum(dC_dZ1, axis = 0, keepdims = True)
-  dB1 = dB1[0]
+
 
   derivatives = {}
   derivatives['W1'] = dW1
-  derivatives['B1'] = dB1
   derivatives['W2'] = dW2
-  derivatives['B2'] = dB2
   derivatives['W3'] = dW3
+  derivatives['W4'] = dW4
 
   return derivatives
 
@@ -169,10 +178,11 @@ def discount_rewards(r):
   discounted_r /= np.std(discounted_r)
   return discounted_r
 
+
 env = gym.make("Pong-v0")
 observation = env.reset()
 prev_frame = None
-state, z1, h1, z2, h2, h3, loss_grad, r = [], [], [], [], [], [], [], []
+state, z1, h1, z2, h2, z3, h3, z4, loss_grad, r = [], [], [], [], [], [], [], [], [], []
 running_reward = None
 reward_sum = 0 
 cumulative_batch_rewards = 0
@@ -188,14 +198,16 @@ while True:
   net_vals = forward_prop(d_frame, model)
 
   state.append(d_frame)
-  h1.append(net_vals["A1"])
   z1.append(net_vals["Z1"])
-  h2.append(net_vals["A2"])
+  h1.append(net_vals["A1"])
   z2.append(net_vals["Z2"])
+  h2.append(net_vals["A2"])
+  z3.append(net_vals["Z3"])
+  h3.append(net_vals["A3"])
 
-  action = make_move(net_vals["A3"])
+  action = make_move(net_vals["A4"])
   y = true_y(action)
-  loss_grad.append(y - net_vals["A3"])
+  loss_grad.append(y - net_vals["A4"])
 
   observation,reward,done,info = env.step(action)
   r.append(reward)
@@ -206,22 +218,26 @@ while True:
     episode_number += 1 
 
     episode_input = np.vstack(state)
-    episode_h1 = np.vstack(h1)
     episode_z1 = np.vstack(z1)
-    episode_h2 = np.vstack(h2)
+    episode_h1 = np.vstack(h1)
     episode_z2 = np.vstack(z2)
+    episode_h2 = np.vstack(h2)
+    episode_z3 = np.vstack(z3)
+    episode_h3 = np.vstack(h3)
+    
+
  
 
 
     episode_loss_grad = np.vstack(loss_grad)
     episode_reward = np.vstack(r)
 
-    state, h1, z1, h2, z2, h3, loss_grad, r = [], [], [], [], [], [], [], []
+    state, z1, h1, z2, h2, z3, h3, z4, loss_grad, r = [], [], [], [], [], [], [], [], [], []
 
     discounted_ep_rewards = discount_rewards(episode_reward)
 
     episode_loss_grad *= discounted_ep_rewards
-    grad = back_prop(episode_input, episode_z1 ,episode_h1, episode_z2, episode_h2, episode_loss_grad)
+    grad = back_prop(episode_input, episode_z1 ,episode_h1, episode_z2, episode_h2, episode_z3, episode_h3, episode_loss_grad)
     
     for k in model: grad_buffer[k] += grad[k] # accumulate grad over the batch
     if episode_number % batch_size == 0:
@@ -260,6 +276,5 @@ while True:
     reward_sum = 0 
     observation = env.reset() # reset env
     prev_x = None
-    
-        
+            
 env.close()
