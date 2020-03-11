@@ -262,13 +262,13 @@ class AndrejBotTraining(models.Model):
       return 1.0 / (1.0 + np.exp(-x)) # sigmoid "squashing" function to interval [0,1]
 
     @classmethod
-    def prepro(request,I):
+    def prepro(self, I):
       """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector """
       image_array = np.asarray(I)
-      a = image_array.reshape(320, 320, 3).astype('float32')
-      a = cv2.cvtColor(cv2.resize(a,(80,80)), cv2.COLOR_BGR2GRAY)
+      a = image_array.reshape(320, 320).astype('float32')
+      a = cv2.resize(a,(80,80))
      
-      cv2.imwrite('color_img.jpg', a)
+      # cv2.imwrite('color_img.jpg', a)
       # print(frame[0][frame != 0])
       print("this is the frame size", a.size)
       ret, a = cv2.threshold(a, 127, 255, cv2.THRESH_BINARY) # et is useless
@@ -276,10 +276,10 @@ class AndrejBotTraining(models.Model):
       I = a.ravel()
       print(len(I))
 
-      # if self.count == 20 :
-      #   with open('final_file.csv', mode='w') as final_file: #store the pixels
-      #         final_writer = csv.writer(final_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-      #         final_writer.writerow(I)
+      if self.count == 20 :
+        with open('final_file.csv', mode='w') as final_file: #store the pixels
+              final_writer = csv.writer(final_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+              final_writer.writerow(I)
       
       return I
     
